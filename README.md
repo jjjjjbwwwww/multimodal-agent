@@ -4,7 +4,7 @@
 Experiment 7: Multimodal Agent with Planning, Memory, and Tool Use
 
 一、项目简介（Project Overview）
-中文版
+
 
 本实验实现了一个 多模态智能体（Multimodal Agent），系统能够：
 
@@ -20,7 +20,7 @@ Experiment 7: Multimodal Agent with Planning, Memory, and Tool Use
 
 该 Agent 不再是“问一句答一句”的模型，而是一个 具备规划、决策和工具调用能力的智能系统。
 
-English Version
+
 
 This project implements a multimodal agent that can:
 
