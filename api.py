@@ -34,11 +34,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # Config
 # ==============
 TEST6_BASE = "http://127.0.0.1:8006"
-DEFAULT_MODEL_DIR = r"E:\python\test6\hf_tmp_blip_vqa"  # 你本地离线模型目录
+DEFAULT_MODEL_DIR = r"E:\python\test6\hf_tmp_blip_vqa"  # 本地离线模型目录
 RUNS_DIR = Path("runs")
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
-UI_FILE = Path("ui.html")  # 放在 test7 目录下
+UI_FILE = Path("ui.html")  
 
 
 # ==============
@@ -97,7 +97,7 @@ async def post_multipart(
                 f"Upstream error: url={url} status={resp.status_code} content_type={ct} body={body[:500]}"
             )
         if "application/json" not in ct:
-            # 也有可能 test6 返回空 content-type，但 body 是 json
+            # 也有可能 返回空 content-type
             try:
                 return resp.json()
             except Exception:
@@ -118,7 +118,7 @@ def build_plan(goal: str) -> Dict[str, Any]:
 
 
 def default_questions(goal: str) -> List[str]:
-    # 这里做最简单可控的策略：中英各一套，goal 含中文就偏中文
+    # 中英各一套，goal 含中文就偏中文
     has_zh = any("\u4e00" <= ch <= "\u9fff" for ch in goal)
     if has_zh:
         return [
@@ -172,7 +172,7 @@ def render_markdown(trace: Dict[str, Any]) -> str:
 
 
 def summarize(goal: str, caption: str, qa: List[Dict[str, str]]) -> str:
-    # 轻量总结：保持可解释、可复现，不做“模型幻想”
+   
     lines = []
     lines.append(f"Goal: {goal}\n")
     lines.append(f"Caption: {caption}\n\n")
@@ -180,7 +180,7 @@ def summarize(goal: str, caption: str, qa: List[Dict[str, str]]) -> str:
     for i, item in enumerate(qa, 1):
         lines.append(f"  Q{i}. {item['question']}\n")
         lines.append(f"      A: {item['answer']}\n")
-    # 简单抽取几个常见字段（不强求）
+   
     scene = ""
     main_obj = ""
     details = ""
@@ -211,7 +211,7 @@ app = FastAPI(title="test7 Agent", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 本地开发方便；做产品再收紧
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -343,7 +343,7 @@ async def agent_run(
 
 @app.post("/agent/chat")
 async def agent_chat(
-    # image 可选：第一轮建议上传，之后可不传（走记忆）
+    # image 可选
     image: Optional[UploadFile] = File(None),
     question: str = Form(...),
     session_id: Optional[str] = Form(None),
@@ -376,7 +376,7 @@ async def agent_chat(
                 status_code=400,
             )
 
-        # build “memory aware” prompt: 把历史 Q/A 拼进去，减少跑偏
+        
         history_text = ""
         if st.history:
             lines = []
@@ -394,7 +394,7 @@ async def agent_chat(
             "goal": "多轮问答",
         }
 
-        # 这里用 test6 /vqa 直接问（更适合 chat）
+       
         # 给一点“系统角色提示”作为上下文，但仍保持可控
         system_hint = (
             "You are a multimodal assistant that can understand images and answer questions.\n"
@@ -428,7 +428,7 @@ async def agent_chat(
             "outputs": {"vqa": vqa_out},
         }
 
-        # 每轮也保存一份 trace（可选，但你要“产品化/可复现”很有价值）
+        # 每轮也保存一份 trace
         json_path = RUNS_DIR / f"{trace_id}.json"
         md_path = RUNS_DIR / f"{trace_id}.md"
         ensure_utf8_json_dump(json_path, trace)
@@ -448,12 +448,12 @@ async def agent_chat(
             "question": q,
             "answer": a,
             "plan": plan,                      # UI 可选择显示/隐藏
-            "history": st.history,             # UI 左侧 Q1/Q2/Q3 就靠它
+            "history": st.history,            
             "saved_json": str(json_path),
             "saved_md": str(md_path),
         }
     except Exception as e:
-        # 这里把上游错误原样带回，方便你在 UI 里友好提示
+       
         return JSONResponse(
             {"error": str(e), "trace_id": trace_id, "session_id": session_id},
             status_code=500,
