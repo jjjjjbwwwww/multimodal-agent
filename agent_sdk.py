@@ -20,8 +20,7 @@ class AgentConfig:
     max_new_tokens: int = 40
     timeout_sec: int = 120
 
-    # 你想把“策略”显示到前端/trace，就在这里保留
-    # 这里先做一个非常稳的 v1 plan（后面 C2/C3 你再升级）
+   
     steps: Tuple[str, ...] = (
         "1) Generate a short caption for the image",
         "2) Ask key questions to extract scene/objects/details",
@@ -45,7 +44,7 @@ def _post_multipart(url: str, image_path: Path, data: Dict[str, Any], timeout_se
 
 
 def _build_questions(goal: str) -> List[str]:
-    # v1：固定模板（稳定、可解释）。后面 C2 再做自动生成策略
+    # v1：固定模板（稳定、可解释）
     return [
         "What is shown in the image? Answer in one short sentence.",
         "Is this indoor or outdoor?",
@@ -80,7 +79,7 @@ def run_agent(
 
     trace_id = f"trace_{time.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
-    # 1) caption（复用 test6 /vqa）
+    # 1) caption
     caption_question = "What is the image about? Answer in one short sentence."
     cap_out = _post_multipart(
         url=f"{cfg.test6_base}/vqa",
@@ -94,13 +93,13 @@ def run_agent(
         timeout_sec=cfg.timeout_sec,
     )
 
-    # 2) batch questions（复用 test6 /vqa_batch）
+    # 2) batch questions
     questions = _build_questions(goal)
     batch_out = _post_multipart(
         url=f"{cfg.test6_base}/vqa_batch",
         image_path=image_path,
         data={
-            # 注意：这里必须是 JSON 字符串（数组）
+            # 这里必须是 JSON 字符串（数组）
             "questions_json": json.dumps(questions, ensure_ascii=False),
             "offline": str(cfg.offline).lower(),
             "max_new_tokens": str(cfg.max_new_tokens),
@@ -109,7 +108,7 @@ def run_agent(
         timeout_sec=cfg.timeout_sec,
     )
 
-    # 3) summarize（v1：规则化拼接，稳定，不靠 LLM）
+    # 3) summarize（规则化拼接，稳定，不靠 LLM）
     caption = cap_out.get("answer", "")
     qa_lines = []
     for i, r in enumerate(batch_out.get("results", []), start=1):
